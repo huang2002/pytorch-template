@@ -16,6 +16,7 @@ LOG_FILE_NAME_TEMPLATE = "{timestamp}.csv"
 
 
 class IterationRecord(NamedTuple):
+    epoch_time_seconds: float
     train_avg_loss: float
     eval_avg_loss: float
     eval_accuracy: float
@@ -39,6 +40,8 @@ if __name__ == "__main__":
 
         print(f"[ Epoch #{epoch_index + 1} ]")
 
+        begin_time = time.time()
+
         train_result = train_loop(
             model=model,
             dataloader=dataloader_train,
@@ -54,8 +57,12 @@ if __name__ == "__main__":
             print_info=True,
         )
 
+        end_time = time.time()
+        epoch_time_seconds = end_time - begin_time
+
         records.append(
             IterationRecord(
+                epoch_time_seconds=epoch_time_seconds,
                 train_avg_loss=(
                     sum(train_result.loss_history)
                     / len(train_result.loss_history)
@@ -65,6 +72,7 @@ if __name__ == "__main__":
             )
         )
 
+        print(f"epoch_time_seconds: {epoch_time_seconds:.3f}")
         print()
 
     print("Saving results...")
