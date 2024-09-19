@@ -73,6 +73,7 @@ if __name__ == "__main__":
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     log_file_name = LOG_FILE_NAME_TEMPLATE.format(timestamp=timestamp)
     log_path = os.path.join(LOG_DIR_PATH, log_file_name)
+    os.makedirs(LOG_DIR_PATH, exist_ok=True)
     df_records.to_csv(log_path)
 
     print("Done.")
