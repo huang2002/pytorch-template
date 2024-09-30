@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
         eval_result = eval_loop(
             model=model,
-            dataloader=dataloader_train,
+            dataloader=dataloader_eval,
             criterion=criterion,
             print_info=True,
         )
