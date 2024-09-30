@@ -14,6 +14,8 @@ from src import eval_loop, train_loop
 LOG_DIR_PATH = os.path.join(os.path.dirname(__file__), "logs/")
 LOG_FILE_NAME_TEMPLATE = "{timestamp}.csv"
 
+device = torch.device("cuda:0")
+
 
 class IterationRecord(NamedTuple):
     epoch_time_seconds: float
@@ -24,7 +26,6 @@ class IterationRecord(NamedTuple):
 
 if __name__ == "__main__":
 
-    device = torch.device("cuda:0")
     torch.set_default_device(device)
 
     dataloader_train, dataloader_eval = get_dataloaders(device)
