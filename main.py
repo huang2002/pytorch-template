@@ -18,6 +18,8 @@ device = torch.device("cuda:0")
 
 
 class IterationRecord(NamedTuple):
+    train_time_seconds: float
+    eval_time_seconds: float
     epoch_time_seconds: float
     train_avg_loss: float
     eval_avg_loss: float
@@ -51,6 +53,8 @@ if __name__ == "__main__":
             print_info=False,
         )
 
+        end_time_train = time.time()
+
         eval_result = eval_loop(
             model=model,
             dataloader=dataloader_eval,
@@ -58,11 +62,15 @@ if __name__ == "__main__":
             print_info=True,
         )
 
-        end_time = time.time()
-        epoch_time_seconds = end_time - begin_time
+        end_time_eval = time.time()
+        train_time_seconds = end_time_train - begin_time
+        eval_time_seconds = end_time_eval - end_time_train
+        epoch_time_seconds = end_time_eval - begin_time
 
         records.append(
             IterationRecord(
+                train_time_seconds=train_time_seconds,
+                eval_time_seconds=eval_time_seconds,
                 epoch_time_seconds=epoch_time_seconds,
                 train_avg_loss=(
                     sum(train_result.loss_history)
@@ -73,7 +81,9 @@ if __name__ == "__main__":
             )
         )
 
-        print(f"epoch_time_seconds: {epoch_time_seconds:.3f}")
+        print(f"train_time_seconds: {train_time_seconds:7.2f}")
+        print(f"eval_time_seconds:  {eval_time_seconds:7.2f}")
+        print(f"epoch_time_seconds: {epoch_time_seconds:7.2f}")
         print()
 
     print("Saving results...")
