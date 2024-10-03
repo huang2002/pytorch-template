@@ -1,7 +1,8 @@
-import os
 import time
+from pathlib import Path
 from typing import NamedTuple
 
+import numpy as np
 import pandas as pd
 import torch
 from torch import nn
@@ -11,13 +12,13 @@ from data import get_dataloaders
 from model import Model
 from src import eval_loop, train_loop
 
-LOG_DIR_PATH = os.path.join(os.path.dirname(__file__), "logs/")
-LOG_FILE_NAME_TEMPLATE = "{timestamp}.csv"
+PROJECT_ROOT = Path(__file__).parent
+LOG_ROOT = PROJECT_ROOT / "logs/"
 
 device = torch.device("cuda:0")
 
 
-class IterationRecord(NamedTuple):
+class StatisticsRecord(NamedTuple):
     train_time_seconds: float
     eval_time_seconds: float
     epoch_time_seconds: float
@@ -35,9 +36,12 @@ if __name__ == "__main__":
     model = Model()
     criterion = nn.CrossEntropyLoss()
     optimizer = SGD(model.parameters(), lr=1e-3)
-    epochs = 8
+    epochs = 10
 
-    records: list[IterationRecord] = []
+    statistics_records: list[StatisticsRecord] = []
+    epoch_indices: list[int] = []
+    pred_list: list[np.number] = []
+    truth_list: list[np.number] = []
 
     for epoch_index in range(epochs):
 
@@ -59,6 +63,7 @@ if __name__ == "__main__":
             model=model,
             dataloader=dataloader_eval,
             criterion=criterion,
+            keep_pred_and_truth=True,
             print_info=True,
         )
 
@@ -67,8 +72,8 @@ if __name__ == "__main__":
         eval_time_seconds = end_time_eval - end_time_train
         epoch_time_seconds = end_time_eval - begin_time
 
-        records.append(
-            IterationRecord(
+        statistics_records.append(
+            StatisticsRecord(
                 train_time_seconds=train_time_seconds,
                 eval_time_seconds=eval_time_seconds,
                 epoch_time_seconds=epoch_time_seconds,
@@ -81,18 +86,32 @@ if __name__ == "__main__":
             )
         )
 
+        epoch_indices.extend([epoch_index + 1] * eval_result.sample_count)
+        pred_list.extend(eval_result.predictions)
+        truth_list.extend(eval_result.ground_truths)
+
         print(f"train_time_seconds: {train_time_seconds:7.2f}")
         print(f"eval_time_seconds:  {eval_time_seconds:7.2f}")
         print(f"epoch_time_seconds: {epoch_time_seconds:7.2f}")
         print()
 
-    print("Saving results...")
-
-    df_records = pd.DataFrame(records)
     timestamp = time.strftime("%Y%m%d-%H%M%S")
-    log_file_name = LOG_FILE_NAME_TEMPLATE.format(timestamp=timestamp)
-    log_path = os.path.join(LOG_DIR_PATH, log_file_name)
-    os.makedirs(LOG_DIR_PATH, exist_ok=True)
-    df_records.to_csv(log_path)
+    log_dir_path = LOG_ROOT / timestamp
+    log_dir_path.mkdir(parents=True, exist_ok=True)
+
+    log_dir_relative_path = str(
+        log_dir_path.relative_to(PROJECT_ROOT).as_posix()
+    )
+    print(f"Saving results to {log_dir_relative_path!r}...")
+
+    df_statistics = pd.DataFrame(statistics_records)
+    df_statistics.to_csv(log_dir_path / "statistics.csv")
+
+    df_predictions = pd.DataFrame({
+        "epoch": epoch_indices,
+        "prediction": pred_list,
+        "ground_truth": truth_list,
+    }).set_index("epoch")
+    df_predictions.to_csv(log_dir_path / "predictions.csv")
 
     print("Done.")

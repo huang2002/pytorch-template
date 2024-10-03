@@ -12,8 +12,9 @@ __all__ = [
 
 
 class EvalResult(NamedTuple):
-    predictions: np.ndarray
-    ground_truths: np.ndarray
+    sample_count: int
+    predictions: list[np.number]
+    ground_truths: list[np.number]
     accuracy: float
     avg_loss: float
 
@@ -27,8 +28,8 @@ def eval_loop(
     print_info: bool = True,
 ) -> EvalResult:
 
-    pred_list = []
-    truth_list = []
+    pred_list: list[np.number] = []
+    truth_list: list[np.number] = []
     loss_sum: float = 0
     correct_count: int = 0
 
@@ -46,11 +47,11 @@ def eval_loop(
             correct_count += (pred == y).type(torch.int).sum().item()
 
             if keep_pred_and_truth:
-                pred_list.extend(pred.numpy())
-                truth_list.extend(y.numpy())
+                pred_list.extend(pred.cpu().numpy())
+                truth_list.extend(y.cpu().numpy())
 
-    dataset_size = len(cast(MNIST, dataloader.dataset))
-    accuracy = correct_count / dataset_size
+    sample_count = len(cast(MNIST, dataloader.dataset))
+    accuracy = correct_count / sample_count
     batch_count = len(dataloader)
     avg_loss = loss_sum / batch_count
 
@@ -58,8 +59,9 @@ def eval_loop(
         print(f"Accuracy: {accuracy:.2%} | Avg Loss: {avg_loss:.6f}")
 
     return EvalResult(
+        sample_count=sample_count,
         accuracy=accuracy,
         avg_loss=avg_loss,
-        predictions=np.array(pred_list),
-        ground_truths=np.array(truth_list),
+        predictions=pred_list,
+        ground_truths=truth_list,
     )
