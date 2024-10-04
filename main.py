@@ -1,3 +1,4 @@
+import json
 import time
 from pathlib import Path
 from typing import NamedTuple
@@ -31,7 +32,7 @@ if __name__ == "__main__":
 
     torch.set_default_device(device)
 
-    dataloader_train, dataloader_eval = get_dataloaders(device)
+    dataloader_train, dataloader_eval, n_classes = get_dataloaders(device)
 
     model = Model()
     criterion = nn.CrossEntropyLoss()
@@ -40,8 +41,7 @@ if __name__ == "__main__":
 
     statistics_records: list[StatisticsRecord] = []
     epoch_indices: list[int] = []
-    pred_list: list[np.number] = []
-    truth_list: list[np.number] = []
+    confusion_matrices: list[np.ndarray] = []
 
     for epoch_index in range(epochs):
 
@@ -63,7 +63,8 @@ if __name__ == "__main__":
             model=model,
             dataloader=dataloader_eval,
             criterion=criterion,
-            keep_pred_and_truth=True,
+            n_classes=n_classes,
+            compute_confusion_matrix=True,
             print_info=True,
         )
 
@@ -87,8 +88,7 @@ if __name__ == "__main__":
         )
 
         epoch_indices.extend([epoch_index + 1] * eval_result.sample_count)
-        pred_list.extend(eval_result.predictions)
-        truth_list.extend(eval_result.ground_truths)
+        confusion_matrices.append(eval_result.confusion_matrix)
 
         print(f"train_time_seconds: {train_time_seconds:7.2f}")
         print(f"eval_time_seconds:  {eval_time_seconds:7.2f}")
@@ -107,11 +107,11 @@ if __name__ == "__main__":
     df_statistics = pd.DataFrame(statistics_records)
     df_statistics.to_csv(log_dir_path / "statistics.csv")
 
-    df_predictions = pd.DataFrame({
-        "epoch": epoch_indices,
-        "prediction": pred_list,
-        "ground_truth": truth_list,
-    }).set_index("epoch")
-    df_predictions.to_csv(log_dir_path / "predictions.csv")
+    confusion_matrices_path = log_dir_path / "confusion_matrices.json"
+    with confusion_matrices_path.open("w", encoding="utf-8") as json_file:
+        json.dump(
+            [array.tolist() for array in confusion_matrices],
+            json_file,
+        )
 
     print("Done.")

@@ -16,6 +16,7 @@ DATA_ROOT_PATH = os.path.dirname(__file__)
 class GetDataloadersResult(NamedTuple):
     dataloader_train: DataLoader
     dataloader_test: DataLoader
+    n_classes: int
 
 
 def get_dataloaders(device: torch.device) -> GetDataloadersResult:
@@ -43,4 +44,5 @@ def get_dataloaders(device: torch.device) -> GetDataloadersResult:
     return GetDataloadersResult(
         dataloader_train=dataloader_train,
         dataloader_test=dataloader_test,
+        n_classes=len(dataset_test.classes),
     )

@@ -13,8 +13,7 @@ __all__ = [
 
 class EvalResult(NamedTuple):
     sample_count: int
-    predictions: list[np.number]
-    ground_truths: list[np.number]
+    confusion_matrix: np.ndarray
     accuracy: float
     avg_loss: float
 
@@ -24,14 +23,18 @@ def eval_loop(
     model: nn.Module,
     dataloader: DataLoader,
     criterion: nn.Module,
-    keep_pred_and_truth: bool = False,
+    n_classes: int,
+    compute_confusion_matrix: bool = False,
     print_info: bool = True,
 ) -> EvalResult:
 
-    pred_list: list[np.number] = []
-    truth_list: list[np.number] = []
+    sample_count = len(cast(MNIST, dataloader.dataset))
     loss_sum: float = 0
     correct_count: int = 0
+    confusion_matrix = np.zeros(
+        (n_classes, n_classes),
+        dtype="int64",
+    )
 
     model.eval()
 
@@ -46,11 +49,10 @@ def eval_loop(
             pred: torch.Tensor = output.argmax(1)
             correct_count += (pred == y).type(torch.int).sum().item()
 
-            if keep_pred_and_truth:
-                pred_list.extend(pred.cpu().numpy())
-                truth_list.extend(y.cpu().numpy())
+            if compute_confusion_matrix:
+                for ground_truth, prediction in zip(y, pred):
+                    confusion_matrix[ground_truth, prediction] += 1
 
-    sample_count = len(cast(MNIST, dataloader.dataset))
     accuracy = correct_count / sample_count
     batch_count = len(dataloader)
     avg_loss = loss_sum / batch_count
@@ -62,6 +64,5 @@ def eval_loop(
         sample_count=sample_count,
         accuracy=accuracy,
         avg_loss=avg_loss,
-        predictions=pred_list,
-        ground_truths=truth_list,
+        confusion_matrix=confusion_matrix,
     )
