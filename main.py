@@ -39,6 +39,34 @@ if __name__ == "__main__":
     optimizer = SGD(model.parameters(), lr=1e-2)
     epochs = 10
 
+    # region Init Logging
+
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    log_dir_path = LOG_ROOT / timestamp
+    log_dir_path.mkdir(parents=True, exist_ok=True)
+
+    log_dir_relative_path = str(
+        log_dir_path.relative_to(PROJECT_ROOT).as_posix()
+    )
+    print(f'Results will be saved to "{log_dir_relative_path!s}".')
+    print()
+
+    config_path = log_dir_path / "config.json"
+    with config_path.open("w", encoding="utf-8") as json_file:
+        json.dump(
+            {
+                "criterion": repr(criterion),
+                "optimizer": repr(optimizer),
+                "epochs": epochs,
+            },
+            json_file,
+            indent=4,
+        )
+
+    # endregion
+
+    # region Train-eval
+
     statistics_records: list[StatisticsRecord] = []
     epoch_indices: list[int] = []
     confusion_matrices: list[np.ndarray] = []
@@ -95,14 +123,9 @@ if __name__ == "__main__":
         print(f"epoch_time_seconds: {epoch_time_seconds:7.2f}")
         print()
 
-    timestamp = time.strftime("%Y%m%d-%H%M%S")
-    log_dir_path = LOG_ROOT / timestamp
-    log_dir_path.mkdir(parents=True, exist_ok=True)
+    # endregion
 
-    log_dir_relative_path = str(
-        log_dir_path.relative_to(PROJECT_ROOT).as_posix()
-    )
-    print(f"Saving results to {log_dir_relative_path!r}...")
+    # region Save Results
 
     df_statistics = pd.DataFrame(statistics_records)
     df_statistics.to_csv(log_dir_path / "statistics.csv")
@@ -113,5 +136,7 @@ if __name__ == "__main__":
             [array.tolist() for array in confusion_matrices],
             json_file,
         )
+
+    # endregion
 
     print("Done.")
