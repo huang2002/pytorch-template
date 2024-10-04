@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     model = Model()
     criterion = nn.CrossEntropyLoss()
-    optimizer = SGD(model.parameters(), lr=1e-3)
+    optimizer = SGD(model.parameters(), lr=1e-2)
     epochs = 10
 
     statistics_records: list[StatisticsRecord] = []
