@@ -2,7 +2,7 @@
 import json
 import time
 from pathlib import Path
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple, TypedDict, cast
 
 import click
 import numpy as np
@@ -31,6 +31,13 @@ class StatisticsRecord(NamedTuple):
 @click.group()
 def main():
     pass
+
+
+class TrainOptions(TypedDict):
+    epochs: int
+    lr: float
+    device_name: str
+    save: bool
 
 
 @main.command()
@@ -62,22 +69,19 @@ def main():
     show_default=True,
     help="Save results to file or not.",
 )
-def train(
-    *,
-    epochs: int,
-    lr: float,
-    device_name: str,
-    save: bool,
-) -> None:
+def train(**options) -> None:
 
-    device = torch.device(device_name)
+    if TYPE_CHECKING:
+        options = cast(TrainOptions, options)
+
+    device = torch.device(options["device_name"])
     torch.set_default_device(device)
 
     dataloader_train, dataloader_eval, n_classes = get_dataloaders(device)
 
     model = Model()
     criterion = nn.CrossEntropyLoss()
-    optimizer = SGD(model.parameters(), lr=lr)
+    optimizer = SGD(model.parameters(), lr=options["lr"])
 
     ######## init logging ########
 
@@ -87,21 +91,21 @@ def train(
         log_dir_path.relative_to(PROJECT_ROOT).as_posix()
     )
 
-    if save:
+    if options["save"]:
         log_dir_path.mkdir(parents=True, exist_ok=True)
         print(f'Results will be saved to "{log_dir_relative_path!s}".')
     else:
         print("Results won't be saved to file.")
     print()
 
-    if save:
+    if options["save"]:
         config_path = log_dir_path / "config.json"
         with config_path.open("w", encoding="utf-8") as json_file:
             json.dump(
                 {
+                    "options": options,
                     "criterion": repr(criterion),
                     "optimizer": repr(optimizer),
-                    "epochs": epochs,
                 },
                 json_file,
                 indent=4,
@@ -113,7 +117,7 @@ def train(
     epoch_indices: list[int] = []
     confusion_matrices: list[np.ndarray] = []
 
-    for epoch in range(1, epochs + 1):
+    for epoch in range(1, options["epochs"] + 1):
 
         print(f"[ Epoch #{epoch} ]")
 
@@ -143,7 +147,7 @@ def train(
         eval_time_seconds = end_time_eval - end_time_train
         epoch_time_seconds = end_time_eval - begin_time
 
-        if save:
+        if options["save"]:
             statistics_records.append(
                 StatisticsRecord(
                     train_time_seconds=train_time_seconds,
@@ -168,7 +172,7 @@ def train(
 
     ######## save results ########
 
-    if save:
+    if options["save"]:
 
         df_statistics = pd.DataFrame(statistics_records)
         df_statistics.to_csv(log_dir_path / "statistics.csv")
