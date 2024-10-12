@@ -65,7 +65,7 @@ class TrainOptions(TypedDict):
     help="Device to use.",
 )
 @click.option(
-    "-e",
+    "-p",
     "--eval-period",
     type=int,
     default=1,
