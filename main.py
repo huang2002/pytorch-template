@@ -85,6 +85,7 @@ class TrainOptions(TypedDict):
     help="Save results to file or not.",
 )
 def train(**options) -> None:
+    """Start model training."""
 
     if TYPE_CHECKING:
         options = cast(TrainOptions, options)
