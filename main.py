@@ -38,6 +38,7 @@ class TrainOptions(TypedDict):
     lr: float
     device_name: str
     save: bool
+    eval_period: int
 
 
 @main.command()
@@ -62,6 +63,14 @@ class TrainOptions(TypedDict):
     default="cuda:0",
     show_default=True,
     help="Device to use.",
+)
+@click.option(
+    "-e",
+    "--eval-period",
+    type=int,
+    default=1,
+    prompt=True,
+    help="Period of evaluation.",
 )
 @click.option(
     "--save/--no-save",
@@ -133,14 +142,17 @@ def train(**options) -> None:
 
         end_time_train = time.time()
 
-        eval_result = eval_loop(
-            model=model,
-            dataloader=dataloader_eval,
-            criterion=criterion,
-            n_classes=n_classes,
-            compute_confusion_matrix=True,
-            print_info=True,
-        )
+        if epoch % options["eval_period"] == 0:
+            eval_result = eval_loop(
+                model=model,
+                dataloader=dataloader_eval,
+                criterion=criterion,
+                n_classes=n_classes,
+                compute_confusion_matrix=True,
+                print_info=True,
+            )
+        else:
+            eval_result = None
 
         end_time_eval = time.time()
         train_time_seconds = end_time_train - begin_time
@@ -148,6 +160,7 @@ def train(**options) -> None:
         epoch_time_seconds = end_time_eval - begin_time
 
         if options["save"]:
+
             statistics_records.append(
                 StatisticsRecord(
                     train_time_seconds=train_time_seconds,
@@ -157,13 +170,22 @@ def train(**options) -> None:
                         sum(train_result.loss_history)
                         / len(train_result.loss_history)
                     ),
-                    eval_avg_loss=eval_result.avg_loss,
-                    eval_accuracy=eval_result.accuracy,
+                    eval_avg_loss=(
+                        eval_result.avg_loss
+                        if eval_result is not None
+                        else np.nan
+                    ),
+                    eval_accuracy=(
+                        eval_result.accuracy
+                        if eval_result is not None
+                        else np.nan
+                    ),
                 )
             )
 
-            epoch_indices.extend([epoch] * eval_result.sample_count)
-            confusion_matrices.append(eval_result.confusion_matrix)
+            if eval_result is not None:
+                epoch_indices.extend([epoch] * eval_result.sample_count)
+                confusion_matrices.append(eval_result.confusion_matrix)
 
         print(f"train_time_seconds: {train_time_seconds:7.2f}")
         print(f"eval_time_seconds:  {eval_time_seconds:7.2f}")
