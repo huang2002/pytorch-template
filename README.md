@@ -26,9 +26,11 @@ This repository serves as a practice project, encompassing a hand-written digit 
 4. Execute `main.py` and wait for it to finish:
 
     ```bash
-    python main.py
+    python main.py train
     ```
 
 5. Open `/notebook/log.ipynb` and update `log_dir` which should be
     a `pathlib.Path` object pointing to the most recent log folder;
 6. Re-run the notebook to view the results.
+
+Execute `python main.py --help` to see other usages.
