@@ -56,10 +56,18 @@ def main():
     show_default=True,
     help="Device to use.",
 )
+@click.option(
+    "--save/--no-save",
+    default=True,
+    show_default=True,
+    help="Save results to file or not.",
+)
 def train(
+    *,
     epochs: int,
     lr: float,
     device_name: str,
+    save: bool,
 ) -> None:
 
     device = torch.device(device_name)
@@ -75,25 +83,29 @@ def train(
 
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     log_dir_path = LOG_ROOT / timestamp
-    log_dir_path.mkdir(parents=True, exist_ok=True)
-
     log_dir_relative_path = str(
         log_dir_path.relative_to(PROJECT_ROOT).as_posix()
     )
-    print(f'Results will be saved to "{log_dir_relative_path!s}".')
+
+    if save:
+        log_dir_path.mkdir(parents=True, exist_ok=True)
+        print(f'Results will be saved to "{log_dir_relative_path!s}".')
+    else:
+        print("Results won't be saved to file.")
     print()
 
-    config_path = log_dir_path / "config.json"
-    with config_path.open("w", encoding="utf-8") as json_file:
-        json.dump(
-            {
-                "criterion": repr(criterion),
-                "optimizer": repr(optimizer),
-                "epochs": epochs,
-            },
-            json_file,
-            indent=4,
-        )
+    if save:
+        config_path = log_dir_path / "config.json"
+        with config_path.open("w", encoding="utf-8") as json_file:
+            json.dump(
+                {
+                    "criterion": repr(criterion),
+                    "optimizer": repr(optimizer),
+                    "epochs": epochs,
+                },
+                json_file,
+                indent=4,
+            )
 
     ######## train-eval ########
 
@@ -131,22 +143,23 @@ def train(
         eval_time_seconds = end_time_eval - end_time_train
         epoch_time_seconds = end_time_eval - begin_time
 
-        statistics_records.append(
-            StatisticsRecord(
-                train_time_seconds=train_time_seconds,
-                eval_time_seconds=eval_time_seconds,
-                epoch_time_seconds=epoch_time_seconds,
-                train_avg_loss=(
-                    sum(train_result.loss_history)
-                    / len(train_result.loss_history)
-                ),
-                eval_avg_loss=eval_result.avg_loss,
-                eval_accuracy=eval_result.accuracy,
+        if save:
+            statistics_records.append(
+                StatisticsRecord(
+                    train_time_seconds=train_time_seconds,
+                    eval_time_seconds=eval_time_seconds,
+                    epoch_time_seconds=epoch_time_seconds,
+                    train_avg_loss=(
+                        sum(train_result.loss_history)
+                        / len(train_result.loss_history)
+                    ),
+                    eval_avg_loss=eval_result.avg_loss,
+                    eval_accuracy=eval_result.accuracy,
+                )
             )
-        )
 
-        epoch_indices.extend([epoch] * eval_result.sample_count)
-        confusion_matrices.append(eval_result.confusion_matrix)
+            epoch_indices.extend([epoch] * eval_result.sample_count)
+            confusion_matrices.append(eval_result.confusion_matrix)
 
         print(f"train_time_seconds: {train_time_seconds:7.2f}")
         print(f"eval_time_seconds:  {eval_time_seconds:7.2f}")
@@ -155,15 +168,17 @@ def train(
 
     ######## save results ########
 
-    df_statistics = pd.DataFrame(statistics_records)
-    df_statistics.to_csv(log_dir_path / "statistics.csv")
+    if save:
 
-    confusion_matrices_path = log_dir_path / "confusion_matrices.json"
-    with confusion_matrices_path.open("w", encoding="utf-8") as json_file:
-        json.dump(
-            [array.tolist() for array in confusion_matrices],
-            json_file,
-        )
+        df_statistics = pd.DataFrame(statistics_records)
+        df_statistics.to_csv(log_dir_path / "statistics.csv")
+
+        confusion_matrices_path = log_dir_path / "confusion_matrices.json"
+        with confusion_matrices_path.open("w", encoding="utf-8") as json_file:
+            json.dump(
+                [array.tolist() for array in confusion_matrices],
+                json_file,
+            )
 
     print("Done.")
 
