@@ -20,12 +20,18 @@ LOG_ROOT = PROJECT_ROOT / "logs"
 
 
 class StatisticsRecord(NamedTuple):
+    epoch: int
     train_time_seconds: float
     eval_time_seconds: float
     epoch_time_seconds: float
     train_avg_loss: float
     eval_avg_loss: float
     eval_accuracy: float
+
+
+class ConfusionMatrixRecord(TypedDict):
+    epoch: int
+    confusion_matrix: list[list[int]]
 
 
 @click.group()
@@ -124,7 +130,7 @@ def train(**options) -> None:
 
     statistics_records: list[StatisticsRecord] = []
     epoch_indices: list[int] = []
-    confusion_matrices: list[np.ndarray] = []
+    confusion_matrix_records: list[ConfusionMatrixRecord] = []
 
     for epoch in range(1, options["epochs"] + 1):
 
@@ -163,6 +169,7 @@ def train(**options) -> None:
 
             statistics_records.append(
                 StatisticsRecord(
+                    epoch=epoch,
                     train_time_seconds=train_time_seconds,
                     eval_time_seconds=eval_time_seconds,
                     epoch_time_seconds=epoch_time_seconds,
@@ -185,7 +192,12 @@ def train(**options) -> None:
 
             if eval_result is not None:
                 epoch_indices.extend([epoch] * eval_result.sample_count)
-                confusion_matrices.append(eval_result.confusion_matrix)
+                confusion_matrix_records.append(
+                    ConfusionMatrixRecord(
+                        epoch=epoch,
+                        confusion_matrix=eval_result.confusion_matrix.tolist(),
+                    )
+                )
 
         print(f"train_time_seconds: {train_time_seconds:7.2f}")
         print(f"eval_time_seconds:  {eval_time_seconds:7.2f}")
@@ -201,10 +213,7 @@ def train(**options) -> None:
 
         confusion_matrices_path = log_dir_path / "confusion_matrices.json"
         with confusion_matrices_path.open("w", encoding="utf-8") as json_file:
-            json.dump(
-                [array.tolist() for array in confusion_matrices],
-                json_file,
-            )
+            json.dump(confusion_matrix_records, json_file)
 
     print("Done.")
 
