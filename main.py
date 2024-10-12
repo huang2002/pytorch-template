@@ -1,8 +1,10 @@
+#!/usr/bin/env python3
 import json
 import time
 from pathlib import Path
 from typing import NamedTuple
 
+import click
 import numpy as np
 import pandas as pd
 import torch
@@ -14,9 +16,7 @@ from model import Model
 from src import eval_loop, train_loop
 
 PROJECT_ROOT = Path(__file__).parent
-LOG_ROOT = PROJECT_ROOT / "logs/"
-
-device = torch.device("cuda:0")
+LOG_ROOT = PROJECT_ROOT / "logs"
 
 
 class StatisticsRecord(NamedTuple):
@@ -28,18 +28,50 @@ class StatisticsRecord(NamedTuple):
     eval_accuracy: float
 
 
-if __name__ == "__main__":
+@click.group()
+def main():
+    pass
 
+
+@main.command()
+@click.option(
+    "-e",
+    "--epochs",
+    type=int,
+    prompt=True,
+    help="Epochs to run."
+)
+@click.option(
+    "-l",
+    "--lr",
+    type=float,
+    prompt=True,
+    help="Learning rate."
+)
+@click.option(
+    "-d",
+    "--device",
+    "device_name",
+    default="cuda:0",
+    show_default=True,
+    help="Device to use.",
+)
+def train(
+    epochs: int,
+    lr: float,
+    device_name: str,
+) -> None:
+
+    device = torch.device(device_name)
     torch.set_default_device(device)
 
     dataloader_train, dataloader_eval, n_classes = get_dataloaders(device)
 
     model = Model()
     criterion = nn.CrossEntropyLoss()
-    optimizer = SGD(model.parameters(), lr=0.1)
-    epochs = 10
+    optimizer = SGD(model.parameters(), lr=lr)
 
-    # region Init Logging
+    ######## init logging ########
 
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     log_dir_path = LOG_ROOT / timestamp
@@ -63,17 +95,15 @@ if __name__ == "__main__":
             indent=4,
         )
 
-    # endregion
-
-    # region Train-eval
+    ######## train-eval ########
 
     statistics_records: list[StatisticsRecord] = []
     epoch_indices: list[int] = []
     confusion_matrices: list[np.ndarray] = []
 
-    for epoch_index in range(epochs):
+    for epoch in range(1, epochs + 1):
 
-        print(f"[ Epoch #{epoch_index + 1} ]")
+        print(f"[ Epoch #{epoch} ]")
 
         begin_time = time.time()
 
@@ -115,7 +145,7 @@ if __name__ == "__main__":
             )
         )
 
-        epoch_indices.extend([epoch_index + 1] * eval_result.sample_count)
+        epoch_indices.extend([epoch] * eval_result.sample_count)
         confusion_matrices.append(eval_result.confusion_matrix)
 
         print(f"train_time_seconds: {train_time_seconds:7.2f}")
@@ -123,9 +153,7 @@ if __name__ == "__main__":
         print(f"epoch_time_seconds: {epoch_time_seconds:7.2f}")
         print()
 
-    # endregion
-
-    # region Save Results
+    ######## save results ########
 
     df_statistics = pd.DataFrame(statistics_records)
     df_statistics.to_csv(log_dir_path / "statistics.csv")
@@ -137,6 +165,8 @@ if __name__ == "__main__":
             json_file,
         )
 
-    # endregion
-
     print("Done.")
+
+
+if __name__ == "__main__":
+    main()
