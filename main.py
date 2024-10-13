@@ -42,6 +42,7 @@ def main():
 class TrainOptions(TypedDict):
     epochs: int
     lr: float
+    batch_size: int
     device_name: str
     save: bool
     eval_period: int
@@ -61,6 +62,13 @@ class TrainOptions(TypedDict):
     type=float,
     prompt=True,
     help="Learning rate."
+)
+@click.option(
+    "-b",
+    "--batch-size",
+    type=int,
+    prompt=True,
+    help="Batch size.",
 )
 @click.option(
     "-d",
@@ -93,7 +101,10 @@ def train(**options) -> None:
     device = torch.device(options["device_name"])
     torch.set_default_device(device)
 
-    dataloader_train, dataloader_eval, n_classes = get_dataloaders(device)
+    dataloader_train, dataloader_eval, n_classes = get_dataloaders(
+        device=device,
+        batch_size=options["batch_size"],
+    )
 
     model = Model()
     criterion = nn.CrossEntropyLoss()

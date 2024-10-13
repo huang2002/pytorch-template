@@ -19,7 +19,11 @@ class GetDataloadersResult(NamedTuple):
     n_classes: int
 
 
-def get_dataloaders(device: torch.device) -> GetDataloadersResult:
+def get_dataloaders(
+    *,
+    device: torch.device,
+    batch_size: int,
+) -> GetDataloadersResult:
 
     transform_to_tensor = ToTensor()
     transform = Lambda(lambda x: transform_to_tensor(x).to(device))
@@ -38,8 +42,8 @@ def get_dataloaders(device: torch.device) -> GetDataloadersResult:
         transform=transform,
     )
 
-    dataloader_train = DataLoader(dataset_train, batch_size=64)
-    dataloader_test = DataLoader(dataset_test, batch_size=64)
+    dataloader_train = DataLoader(dataset_train, batch_size=batch_size)
+    dataloader_test = DataLoader(dataset_test, batch_size=batch_size)
 
     return GetDataloadersResult(
         dataloader_train=dataloader_train,
