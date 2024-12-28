@@ -10,7 +10,7 @@ from torch import nn
 from torch.optim.sgd import SGD
 
 from data import get_dataloaders
-from model import Model
+from models import get_model
 from src.eval_loop import eval_loop
 from src.train_loop import train_loop
 from src.utils import (
@@ -22,6 +22,7 @@ from src.utils import (
 
 
 class TrainOptions(TypedDict):
+    model_name: str
     epochs: int
     lr: float
     batch_size: int
@@ -31,6 +32,7 @@ class TrainOptions(TypedDict):
 
 
 @click.command()
+@click.option("-m", "--model-name", prompt=True, help="Model name.")
 @click.option("-e", "--epochs", type=int, prompt=True, help="Epochs to run.")
 @click.option("-l", "--lr", type=float, prompt=True, help="Learning rate.")
 @click.option(
@@ -76,6 +78,7 @@ def train(**options) -> None:
         batch_size=options["batch_size"],
     )
 
+    Model = get_model(options["model_name"])
     model = Model()
     criterion = nn.CrossEntropyLoss()
     optimizer = SGD(model.parameters(), lr=options["lr"])
