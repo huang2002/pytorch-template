@@ -117,9 +117,10 @@ def train(**options) -> None:
     epoch_indices: list[int] = []
     confusion_matrix_records: list[ConfusionMatrixRecord] = []
 
-    for epoch in range(1, options["epochs"] + 1):
+    total_epochs = options["epochs"]
+    for epoch in range(1, total_epochs + 1):
 
-        print(f"[ Epoch #{epoch} ]")
+        print(f"[ Epoch {epoch}/{total_epochs} ]")
 
         begin_time = time.time()
 
