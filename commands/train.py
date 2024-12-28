@@ -24,9 +24,10 @@ class TrainOptions(TypedDict):
     epochs: int
     lr: float
     batch_size: int
-    device_name: str
-    save: bool
     eval_period: int
+    device_name: str
+    save_statistics: bool
+    save_weights: bool
 
 
 @click.command()
@@ -41,14 +42,6 @@ class TrainOptions(TypedDict):
     help="Batch size.",
 )
 @click.option(
-    "-d",
-    "--device",
-    "device_name",
-    default="cuda:0",
-    show_default=True,
-    help="Device to use.",
-)
-@click.option(
     "-p",
     "--eval-period",
     type=int,
@@ -57,10 +50,24 @@ class TrainOptions(TypedDict):
     help="Period of evaluation.",
 )
 @click.option(
-    "--save/--no-save",
+    "-d",
+    "--device",
+    "device_name",
+    default="cuda:0",
+    show_default=True,
+    help="Device to use.",
+)
+@click.option(
+    "--save-statistics/--no-save-statistics",
     default=True,
     show_default=True,
-    help="Save results to file or not.",
+    help="Save statistics to file or not.",
+)
+@click.option(
+    "--save-weights/--no-save-weights",
+    default=True,
+    show_default=True,
+    help="Save weights to file or not.",
 )
 def train(**options) -> None:
     """Start model training."""
@@ -89,14 +96,15 @@ def train(**options) -> None:
         log_dir_path.relative_to(PROJECT_ROOT).as_posix()
     )
 
-    if options["save"]:
+    print()
+    if options["save_statistics"]:
         log_dir_path.mkdir(parents=True, exist_ok=True)
         print(f'Results will be saved to "{log_dir_relative_path!s}".')
     else:
         print("Results won't be saved to file.")
     print()
 
-    if options["save"]:
+    if options["save_statistics"]:
         config_path = log_dir_path / "config.json"
         with config_path.open("w", encoding="utf-8") as json_file:
             json.dump(
@@ -149,7 +157,7 @@ def train(**options) -> None:
         eval_time_seconds = end_time_eval - end_time_train
         epoch_time_seconds = end_time_eval - begin_time
 
-        if options["save"]:
+        if options["save_statistics"]:
 
             statistics_records.append(
                 StatisticsRecord(
@@ -190,7 +198,7 @@ def train(**options) -> None:
 
     ######## save results ########
 
-    if options["save"]:
+    if options["save_statistics"]:
 
         df_statistics = pd.DataFrame(statistics_records)
         df_statistics.to_csv(log_dir_path / "statistics.csv")
@@ -200,5 +208,9 @@ def train(**options) -> None:
             json.dump(confusion_matrix_records, json_file)
 
         copy_notebooks(log_dir_path, model_name=options["model_name"])
+
+    if options["save_weights"]:
+        model_save_path = log_dir_path / "weights.pth"
+        torch.save(model.state_dict(), model_save_path)
 
     print("Done.")
