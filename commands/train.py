@@ -1,4 +1,6 @@
 import json
+from pathlib import Path
+import shutil
 import time
 from typing import TYPE_CHECKING, TypedDict, cast
 
@@ -13,12 +15,8 @@ from data import get_dataloaders
 from models import get_model
 from src.eval_loop import eval_loop
 from src.train_loop import train_loop
-from src.utils import (
-    LOG_ROOT,
-    PROJECT_ROOT,
-    ConfusionMatrixRecord,
-    StatisticsRecord,
-)
+from src.utils import (LOG_ROOT, NOTEBOOK_ROOT, PROJECT_ROOT, ConfusionMatrixRecord,
+                       StatisticsRecord)
 
 
 class TrainOptions(TypedDict):
@@ -200,5 +198,9 @@ def train(**options) -> None:
         confusion_matrices_path = log_dir_path / "confusion_matrices.json"
         with confusion_matrices_path.open("w", encoding="utf-8") as json_file:
             json.dump(confusion_matrix_records, json_file)
+
+        for notebook_src in NOTEBOOK_ROOT.iterdir():
+            notebook_dst = log_dir_path / notebook_src.name
+            shutil.copyfile(notebook_src, notebook_dst)
 
     print("Done.")

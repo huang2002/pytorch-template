@@ -3,6 +3,7 @@ from typing import NamedTuple, TypedDict
 
 PROJECT_ROOT = Path(__file__).parent.parent
 LOG_ROOT = PROJECT_ROOT / "logs"
+NOTEBOOK_ROOT = PROJECT_ROOT / "notebooks"
 
 
 class StatisticsRecord(NamedTuple):
