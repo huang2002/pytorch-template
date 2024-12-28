@@ -78,10 +78,13 @@ def train(**options) -> None:
     device = torch.device(options["device_name"])
     torch.set_default_device(device)
 
-    dataloader_train, dataloader_eval, n_classes = get_dataloaders(
+    data = get_dataloaders(
         device=device,
         batch_size=options["batch_size"],
     )
+    dataloader_train = data.dataloader_train
+    dataloader_eval = data.dataloader_test
+    n_classes = data.n_classes
 
     Model = get_model(options["model_name"])
     model = Model()

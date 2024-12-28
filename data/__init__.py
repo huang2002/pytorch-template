@@ -14,6 +14,8 @@ DATA_ROOT_PATH = os.path.dirname(__file__)
 
 
 class GetDataloadersResult(NamedTuple):
+    dataset_train: datasets.MNIST
+    dataset_test: datasets.MNIST
     dataloader_train: DataLoader
     dataloader_test: DataLoader
     n_classes: int
@@ -46,6 +48,8 @@ def get_dataloaders(
     dataloader_test = DataLoader(dataset_test, batch_size=batch_size)
 
     return GetDataloadersResult(
+        dataset_train=dataset_train,
+        dataset_test=dataset_test,
         dataloader_train=dataloader_train,
         dataloader_test=dataloader_test,
         n_classes=len(dataset_test.classes),
