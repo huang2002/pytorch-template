@@ -15,19 +15,18 @@ This repository serves as a practice project, encompassing a hand-written digit 
 
 ## Usage
 
-1. (optional) Edit training config in `main.py`;
-2. Create [conda environment](https://docs.conda.io/projects/conda/en/stable/user-guide/tasks/manage-environments.html) from `environment.yml`:
+1. Create [conda environment](https://docs.conda.io/projects/conda/en/stable/user-guide/tasks/manage-environments.html) from `environment.yml`:
 
     ```bash
     conda env create -f environment.yml
     ```
 
-3. Execute `main.py` and wait for it to finish:
+2. Execute `main.py` and wait for it to finish:
 
     ```bash
     python main.py train
     ```
 
-4. Open `/path/to/log/log.ipynb`(the actual path is available in the output of last command), run it, and view the results.
+3. Open `/path/to/log/statistics.ipynb`(the actual path is available in the output of last command), run it, and view the results.
 
 Execute `python main.py --help` to get an overview of available commands.
