@@ -1,6 +1,5 @@
 import json
 import time
-from pathlib import Path
 from typing import TYPE_CHECKING, TypedDict, cast
 
 import click
@@ -13,10 +12,11 @@ from torch.optim.sgd import SGD
 from data import get_dataloaders
 from models import get_model
 from notebooks import copy_notebooks
-from src.eval_loop import eval_loop
-from src.train_loop import train_loop
-from src.utils import (LOG_ROOT, PROJECT_ROOT,
-                       ConfusionMatrixRecord, StatisticsRecord)
+
+from .eval_loop import eval_loop
+from .train_loop import train_loop
+from .utils import (LOG_ROOT, PROJECT_ROOT, ConfusionMatrixRecord,
+                    StatisticsRecord)
 
 
 class TrainOptions(TypedDict):

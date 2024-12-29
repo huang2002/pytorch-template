@@ -10,7 +10,6 @@ This repository serves as a practice project, encompassing a hand-written digit 
 | `/data/...`        | Data loader script and downloaded dataset. |
 | `/models/...`      | Model definitions.                         |
 | `/notebooks/...`   | Analysis notebook templates.               |
-| `/src/...`         | Loop functions.                            |
 | `/main.py`         | Entry point script.                        |
 | `/environment.yml` | Conda environment definition.              |
 
