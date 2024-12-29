@@ -1,6 +1,6 @@
 /.venv/
 /envs/
-/data/MNIST/
+/data/_datasets/
 /logs/
 
 __pycache__

@@ -1,26 +1,11 @@
-import json
-import time
-from typing import TYPE_CHECKING, TypedDict, cast
+from typing import TypedDict
 
 import click
-import numpy as np
-import pandas as pd
-import torch
-from torch import nn
-from torch.optim.sgd import SGD
-
-from data import get_dataloaders
-from models import get_model
-from notebooks import copy_notebooks
-
-from .eval_loop import eval_loop
-from .train_loop import train_loop
-from .utils import (LOG_ROOT, PROJECT_ROOT, ConfusionMatrixRecord,
-                    StatisticsRecord)
 
 
 class TrainOptions(TypedDict):
-    model_name: str
+    model: str
+    dataset: str
     epochs: int
     lr: float
     batch_size: int
@@ -31,26 +16,19 @@ class TrainOptions(TypedDict):
 
 
 @click.command()
-@click.option("-m", "--model-name", prompt=True, help="Model name.")
+@click.option("-m", "--model", prompt=True, help="Model name.")
+@click.option("-d", "--dataset", prompt=True, help="Dataset name.")
 @click.option("-e", "--epochs", type=int, prompt=True, help="Epochs to run.")
 @click.option("-l", "--lr", type=float, prompt=True, help="Learning rate.")
-@click.option(
-    "-b",
-    "--batch-size",
-    type=int,
-    prompt=True,
-    help="Batch size.",
-)
+@click.option("-b", "--batch-size", type=int, prompt=True, help="Batch size.")
 @click.option(
     "-p",
     "--eval-period",
     type=int,
-    default=1,
     prompt=True,
     help="Period of evaluation.",
 )
 @click.option(
-    "-d",
     "--device",
     "device_name",
     default="cuda:0",
@@ -72,13 +50,33 @@ class TrainOptions(TypedDict):
 def train(**options) -> None:
     """Start model training."""
 
+    import json
+    import time
+    from typing import TYPE_CHECKING, cast
+
+    import numpy as np
+    import pandas as pd
+    import torch
+    from torch import nn
+    from torch.optim.sgd import SGD
+
+    from data import get_data
+    from models import get_model
+    from notebooks import copy_notebooks
+
+    from .eval_loop import eval_loop
+    from .train_loop import train_loop
+    from .utils import (LOG_ROOT, PROJECT_ROOT, ConfusionMatrixRecord,
+                        StatisticsRecord)
+
     if TYPE_CHECKING:
         options = cast(TrainOptions, options)
 
     device = torch.device(options["device_name"])
     torch.set_default_device(device)
 
-    data = get_dataloaders(
+    data = get_data(
+        options["dataset"],
         device=device,
         batch_size=options["batch_size"],
     )
@@ -86,7 +84,7 @@ def train(**options) -> None:
     dataloader_eval = data.dataloader_test
     n_classes = data.n_classes
 
-    Model = get_model(options["model_name"])
+    Model = get_model(options["model"])
     model = Model()
     criterion = nn.CrossEntropyLoss()
     optimizer = SGD(model.parameters(), lr=options["lr"])
@@ -210,7 +208,7 @@ def train(**options) -> None:
         with confusion_matrices_path.open("w", encoding="utf-8") as json_file:
             json.dump(confusion_matrix_records, json_file)
 
-        copy_notebooks(log_dir_path, model_name=options["model_name"])
+        copy_notebooks(log_dir_path, model_name=options["model"])
 
     if options["save_weights"]:
         model_save_path = log_dir_path / "weights.pth"
