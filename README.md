@@ -15,18 +15,20 @@ This is a personal template repository for PyTorch projects. A hand-written digi
 
 ## Usage
 
-1. Create [conda environment](https://docs.conda.io/projects/conda/en/stable/user-guide/tasks/manage-environments.html) from `environment.yml`:
+1. Open `environment.yml` and edit the environment name in the first line.
+2. Create [conda environment](https://docs.conda.io/projects/conda/en/stable/user-guide/tasks/manage-environments.html) from `environment.yml` and activate it:
 
     ```bash
     conda env create -f environment.yml
+    conda activate <YOUR_ENVIRONMENT_NAME>
     ```
 
-2. Execute `main.py` and wait for it to finish:
+3. Execute `main.py` and wait for it to finish:
 
     ```bash
     python main.py train
     ```
 
-3. Open `/path/to/log/statistics.ipynb`(the actual path is available in the output of last command), run it, and view the results.
+4. Open `/path/to/log/statistics.ipynb`(the actual path is available in the output of last command), run it, and view the results.
 
 Execute `python main.py --help` to get an overview of available commands.
