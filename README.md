@@ -1,6 +1,6 @@
-# pytorch-mnist
+# pytorch-template
 
-This repository serves as a practice project, encompassing a hand-written digit recognition model based on the MNIST dataset, implemented using PyTorch.
+This is a personal template repository for PyTorch projects. A hand-written digit recognition model is included as example.
 
 ## File Structure
 
